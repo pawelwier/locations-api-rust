@@ -1,0 +1,10 @@
+[package]
+name = "locations-api-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mongodb = "2.8.2"
+dotenv = "0.15.0"
+serde = "1.0.197"
+tokio = { version = "1", features = ["full"]}
