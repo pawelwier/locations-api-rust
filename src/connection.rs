@@ -1,7 +1,9 @@
 use mongodb::{
-    Client, Database, options::ClientOptions, error::Error
+    error::Error, options::ClientOptions, Client, Collection, Database
 };
 use dotenv::var;
+
+use crate::location::Location;
 
 fn get_mongo_address() -> String {
     format!("mongodb+srv://{}:{}@test.fdk5v31.mongodb.net/?retryWrites=true&w=majority",
@@ -35,5 +37,15 @@ pub async fn connect() -> Result<Database, Error> {
            println!("Database connection error");
            Err(e)
         }
+    }
+}
+
+pub async fn get_location_collection() -> Result<Collection<Location> , Error> {
+    match connect().await {
+        Ok(db) => Ok(db.collection::<Location>("locations")),
+        Err(e) => {
+            println!("Couldn't find the collection");
+            Err(e)
+         }
     }
 }
