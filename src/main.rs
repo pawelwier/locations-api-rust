@@ -1,7 +1,9 @@
+use axum::{routing::get, Router};
+use dotenv::var;
 use result::ApiResult;
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
 
-use axum::{routing::get, Router};
 use controller::{add_location, get_all_locations};
 
 mod connection;
@@ -11,9 +13,10 @@ mod result;
 
 #[tokio::main]
 async fn main() -> ApiResult<()> {
-    let url = "127.0.0.1:5050".to_string();
+    let url = var("URL").unwrap();
     let router: Router<()> = Router::new()
-        .route("/locations", get(get_all_locations).post(add_location));
+        .route("/locations", get(get_all_locations).post(add_location))
+        .layer(CorsLayer::permissive());
 
     match TcpListener::bind(url.clone()).await {
         Ok(listener) => {
