@@ -4,7 +4,11 @@ use result::ApiResult;
 use tokio::net::TcpListener;
 use tower_http::cors::CorsLayer;
 
-use controller::{add_location, get_all_locations};
+use controller::{
+    add_location,
+    get_all_locations,
+    get_one_location, remove_location
+};
 
 mod connection;
 mod controller;
@@ -15,7 +19,14 @@ mod result;
 async fn main() -> ApiResult<()> {
     let url = var("URL").unwrap();
     let router: Router<()> = Router::new()
-        .route("/locations", get(get_all_locations).post(add_location))
+        .route("/locations", 
+            get(get_all_locations)
+                .post(add_location)
+        )
+        .route("/locations/:id", 
+            get(get_one_location)
+                .delete(remove_location)
+        )
         .layer(CorsLayer::permissive());
 
     match TcpListener::bind(url.clone()).await {

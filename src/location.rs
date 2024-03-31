@@ -1,6 +1,9 @@
 use mongodb::{
     Collection, Cursor,
-    bson::doc
+    bson::{
+        doc,
+        oid::ObjectId
+    }
 };
 use serde::{Deserialize, Serialize};
 use futures::stream::StreamExt;
@@ -20,6 +23,13 @@ pub struct LocationToCreate {
     pub name: String,
     pub lat: f32,
     pub lng: f32
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LocationToUpdate {
+    pub name: Option<String>,
+    pub lat: Option<f32>,
+    pub lng: Option<f32>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -54,7 +64,20 @@ pub async fn find_all_locations() -> ApiResult<Vec<Location>> {
         .collect()
         .await;
 
+    println!("Locations found: {}", locations.len());
+
     Ok(locations)
+}
+
+pub async fn find_one_location(_id: ObjectId) -> ApiResult<Option<Location>> {
+    let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
+    let location = location_collection.find_one(
+        doc! {
+            "_id": &_id
+        },
+        None
+    ).await.unwrap();
+    Ok(location)
 }
 
 pub async fn create_location(location_to_create: LocationToCreate) -> ApiResult<Json<Location>> {
@@ -63,4 +86,15 @@ pub async fn create_location(location_to_create: LocationToCreate) -> ApiResult<
     let _ = location_collection.insert_one(&location, None).await;
 
     Ok(Json(location))
+}
+
+pub async fn delete_location(_id: ObjectId) -> ApiResult<u64> {
+    let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
+    let delete_result = location_collection.delete_one(
+        doc! {
+            "_id": &_id
+        },
+        None
+    ).await.unwrap();
+    Ok(delete_result.deleted_count)
 }
