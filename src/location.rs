@@ -34,8 +34,9 @@ pub struct LocationToUpdate {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Location {
-    name: String,
-    latlng: LatLng
+    pub _id: Option<ObjectId>,
+    pub name: String,
+    pub latlng: LatLng
 }
 
 /*
@@ -48,11 +49,12 @@ impl Location {
 
 fn parse_create_location(location_to_create: LocationToCreate) -> Location {
     Location {
+        _id: None,
         latlng: LatLng { 
             lat: location_to_create.lat, 
             lng: location_to_create.lng 
         },
-        name: location_to_create.name
+        name: location_to_create.name,
     }
 }
 
