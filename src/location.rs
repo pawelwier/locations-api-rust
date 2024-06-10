@@ -34,9 +34,9 @@ pub struct LocationToUpdate {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Location {
-    pub _id: Option<ObjectId>,
-    pub name: String,
-    pub latlng: LatLng
+    _id: Option<ObjectId>,
+    name: String,
+    latlng: LatLng
 }
 
 /*
@@ -49,12 +49,12 @@ impl Location {
 
 fn parse_create_location(location_to_create: LocationToCreate) -> Location {
     Location {
-        _id: None,
+        _id: Some(ObjectId::new()),
         latlng: LatLng { 
             lat: location_to_create.lat, 
             lng: location_to_create.lng 
         },
-        name: location_to_create.name,
+        name: location_to_create.name
     }
 }
 
@@ -85,7 +85,16 @@ pub async fn find_one_location(_id: ObjectId) -> ApiResult<Option<Location>> {
 pub async fn create_location(location_to_create: LocationToCreate) -> ApiResult<Json<Location>> {
     let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
     let location = parse_create_location(location_to_create);
-    let _ = location_collection.insert_one(&location, None).await;
+    let location_result = location_collection.insert_one(&location, None).await;
+
+    match location_result {
+        Ok(data) => {
+            println!("Inserted: {}", data.inserted_id)
+        },
+        Err(e) => {
+            println!("Insert error: {}", e)
+        }
+    }
 
     Ok(Json(location))
 }
