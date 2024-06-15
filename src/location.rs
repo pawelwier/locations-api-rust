@@ -1,15 +1,17 @@
 use mongodb::{
-    Collection, Cursor,
     bson::{
+        bson,
         doc,
-        oid::ObjectId
-    }
+        oid::ObjectId,
+        to_bson,
+        Document
+    }, Collection, Cursor
 };
 use serde::{Deserialize, Serialize};
 use futures::stream::StreamExt;
 use axum::response::Json;
 
-use crate::connection::get_location_collection;
+use crate::{connection::get_location_collection, result::ApiError};
 use crate::result::ApiResult;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,6 +40,8 @@ pub struct Location {
     name: String,
     latlng: LatLng
 }
+
+// TODO: separate files
 
 /*
 impl Location {
@@ -79,6 +83,7 @@ pub async fn find_one_location(_id: ObjectId) -> ApiResult<Option<Location>> {
         },
         None
     ).await.unwrap();
+
     Ok(location)
 }
 
@@ -101,11 +106,49 @@ pub async fn create_location(location_to_create: LocationToCreate) -> ApiResult<
 
 pub async fn delete_location(_id: ObjectId) -> ApiResult<u64> {
     let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
+    let query: Document = doc! { "_id": _id };
     let delete_result = location_collection.delete_one(
-        doc! {
-            "_id": &_id
-        },
+        query,
         None
-    ).await.unwrap();
-    Ok(delete_result.deleted_count)
+    ).await;
+
+    match delete_result {
+        Ok(value) => {
+            let count: u64 = value.deleted_count;
+            println!("Records deleted: {}", count);
+
+            Ok(count)
+        },
+        Err(_) => { Err(ApiError::InvalidLocationData)}
+    }
+
+}
+
+pub async fn update_location(
+    _id: ObjectId,
+    location_to_update: LocationToUpdate
+) -> ApiResult<ObjectId> {
+    let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
+    let query = doc! { "_id": _id };
+    let location_bson_result = to_bson(&location_to_update);
+
+    match location_bson_result {
+        Ok(location_bson) => {
+            let update_object = doc! { "$set": bson!(location_bson) };
+            let update_data = location_collection.update_one(query, update_object, None).await;
+            
+            match update_data {
+                Ok(value) => {
+                    let count: u64 = value.modified_count;
+                    if value.modified_count == 1 {
+                        println!("Records updated: {}", count);
+
+                        Ok(_id) 
+                    } else { Err(ApiError::InvalidLocationData) }
+                },
+                Err(_) => { Err(ApiError::InvalidLocationData) }
+            }
+        },
+        Err(_) => { Err(ApiError::InvalidUpdateObject) }
+    }
 }

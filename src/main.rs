@@ -7,7 +7,9 @@ use tower_http::cors::CorsLayer;
 use controller::{
     add_location,
     get_all_locations,
-    get_one_location, remove_location
+    get_one_location,
+    remove_location,
+    edit_location
 };
 
 mod connection;
@@ -26,6 +28,7 @@ async fn main() -> ApiResult<()> {
         .route("/locations/:id", 
             get(get_one_location)
                 .delete(remove_location)
+                .patch(edit_location)
         )
         .layer(CorsLayer::permissive());
 

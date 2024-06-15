@@ -5,6 +5,7 @@ pub type ApiResult<T> = core::result::Result<T, ApiError>;
 #[derive(Debug)]
 pub enum ApiError {
     InvalidLocationData,
+    InvalidUpdateObject
 }
 
 impl IntoResponse for ApiError {
