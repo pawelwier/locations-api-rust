@@ -34,6 +34,12 @@ pub struct LocationToUpdate {
     pub lng: Option<f32>
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct LocationUpdateData {
+    name: Option<String>,
+    latlng: Option<LatLng>
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Location {
     _id: Option<ObjectId>,
@@ -59,6 +65,16 @@ fn parse_create_location(location_to_create: LocationToCreate) -> Location {
             lng: location_to_create.lng 
         },
         name: location_to_create.name
+    }
+}
+
+fn parse_edit_location(location_to_edit: LocationToUpdate) -> LocationUpdateData {
+    LocationUpdateData {
+        latlng: Some(LatLng { 
+            lat: location_to_edit.lat.unwrap(), 
+            lng: location_to_edit.lng.unwrap() 
+        }),
+        name: location_to_edit.name
     }
 }
 
@@ -130,11 +146,12 @@ pub async fn update_location(
 ) -> ApiResult<ObjectId> {
     let location_collection: Collection<Location>  = get_location_collection().await.unwrap();
     let query = doc! { "_id": _id };
-    let location_bson_result = to_bson(&location_to_update);
+    let location_bson_result = to_bson(&parse_edit_location(location_to_update));
 
     match location_bson_result {
         Ok(location_bson) => {
             let update_object = doc! { "$set": bson!(location_bson) };
+            println!("{:?}", update_object);
             let update_data = location_collection.update_one(query, update_object, None).await;
             
             match update_data {
